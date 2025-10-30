@@ -1,64 +1,212 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Building2, DoorOpen, Calendar, Plus } from "lucide-react";
+import Link from "next/link";
+import type { Laboratory } from "@/lib/types";
+
+export default function HomePage() {
+  const [labs, setLabs] = useState<Laboratory[]>([]);
+  const [stats, setStats] = useState({
+    totalLabs: 0,
+    totalRooms: 0,
+    totalBookings: 0,
+  });
+
+  useEffect(() => {
+    const storedLabs = localStorage.getItem("laboratories");
+    const storedBookings = localStorage.getItem("bookings");
+
+    if (storedLabs) {
+      const parsedLabs = JSON.parse(storedLabs);
+      setLabs(parsedLabs);
+
+      const totalRooms = parsedLabs.reduce(
+        (acc: number, lab: Laboratory) => acc + (lab.rooms?.length || 0),
+        0
+      );
+
+      const bookings = storedBookings ? JSON.parse(storedBookings) : [];
+
+      setStats({
+        totalLabs: parsedLabs.length,
+        totalRooms,
+        totalBookings: bookings.length,
+      });
+    }
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">CadLab</h1>
+              <p className="text-muted-foreground mt-1">
+                Sistema de Gerenciamento de Laboratórios
+              </p>
+            </div>
+            <nav className="flex gap-4">
+              <Link href="/manage">
+                <Button variant="outline">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Gerenciar
+                </Button>
+              </Link>
+              <Link href="/schedule">
+                <Button>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Agendar
+                </Button>
+              </Link>
+            </nav>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      <main className="container mx-auto px-4 py-12">
+        <div className="grid gap-6 md:grid-cols-3 mb-12">
+          <Card className="bg-linear-to-br from-chart-1/10 to-chart-1/5 border-chart-1/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-chart-1">
+                <Building2 className="h-5 w-5" />
+                Laboratórios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-foreground">
+                {stats.totalLabs}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Total cadastrados
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-linear-to-br from-chart-2/10 to-chart-2/5 border-chart-2/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-chart-2">
+                <DoorOpen className="h-5 w-5" />
+                Salas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-foreground">
+                {stats.totalRooms}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Disponíveis</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-linear-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-chart-3">
+                <Calendar className="h-5 w-5" />
+                Agendamentos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-foreground">
+                {stats.totalBookings}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Reservas ativas
+              </p>
+            </CardContent>
+          </Card>
         </div>
+
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Laboratórios Cadastrados
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Visualize e gerencie seus laboratórios
+            </p>
+          </div>
+          <Link href="/manage">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Laboratório
+            </Button>
+          </Link>
+        </div>
+
+        {labs.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <Building2 className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Nenhum laboratório cadastrado
+              </h3>
+              <p className="text-muted-foreground mb-6 text-center max-w-md">
+                Comece cadastrando seu primeiro laboratório para gerenciar salas
+                e agendamentos
+              </p>
+              <Link href="/manage">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Cadastrar Laboratório
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {labs.map((lab) => (
+              <Card key={lab.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-foreground">{lab.name}</CardTitle>
+                  <CardDescription>{lab.location}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Capacidade:</span>
+                      <span className="font-medium text-foreground">
+                        {lab.capacity} pessoas
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Salas:</span>
+                      <span className="font-medium text-foreground">
+                        {lab.rooms?.length || 0}
+                      </span>
+                    </div>
+                    {lab.description && (
+                      <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                        {lab.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Link href={`/manage?lab=${lab.id}`} className="flex-1">
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                      >
+                        Ver Detalhes
+                      </Button>
+                    </Link>
+                    <Link href={`/schedule?lab=${lab.id}`} className="flex-1">
+                      <Button className="w-full">Agendar</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
