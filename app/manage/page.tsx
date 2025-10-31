@@ -9,19 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Building2,
-  Plus,
-  Trash2,
-  Edit2,
-  ArrowLeft,
-  DoorOpen,
-} from "lucide-react";
-import Link from "next/link";
+import { Building2, Plus, Trash2, Edit2, DoorOpen } from "lucide-react";
 import type { Laboratory, Room } from "@/lib/types";
 import { toast } from "sonner";
 import { LabModal } from "@/components/lab-modal";
 import { RoomModal } from "@/components/room-modal";
+import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useApiService } from "@/lib/api";
 
 export default function ManagePage() {
   const [labs, setLabs] = useState<Laboratory[]>([]);
@@ -30,135 +25,249 @@ export default function ManagePage() {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [editingLab, setEditingLab] = useState<Laboratory | null>(null);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { user, token, loading: authLoading } = useAuth();
+  const apiService = useApiService();
 
   useEffect(() => {
-    const storedLabs = localStorage.getItem("laboratories");
-    if (storedLabs) {
-      setLabs(JSON.parse(storedLabs));
+    if (user && token) {
+      fetchLabs();
     }
-  }, []);
+  }, [user, token]);
 
-  const saveLabs = (updatedLabs: Laboratory[]) => {
-    localStorage.setItem("laboratories", JSON.stringify(updatedLabs));
-    setLabs(updatedLabs);
-  };
-
-  const handleDeleteLab = (labId: string) => {
-    const updatedLabs = labs.filter((lab) => lab.id !== labId);
-    saveLabs(updatedLabs);
-    if (selectedLab?.id === labId) {
-      setSelectedLab(null);
+  const fetchLabs = async () => {
+    try {
+      setIsLoading(true);
+      const laboratories = await apiService.getLabs(token as string);
+      setLabs(laboratories);
+    } catch (error) {
+      console.error("Erro ao carregar laboratórios:", error);
+      toast("Erro", {
+        description: "Não foi possível carregar os laboratórios.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    toast("Laboratório excluído", {
-      description: "O laboratório foi removido com sucesso.",
-    });
   };
 
-  const handleDeleteRoom = (roomId: string) => {
-    if (!selectedLab) return;
+  const handleDeleteLab = async (labId: string) => {
+    try {
+      await apiService.deleteLab(token as string, Number(labId));
 
-    const updatedLab = {
-      ...selectedLab,
-      rooms: selectedLab.rooms?.filter((room) => room.id !== roomId) || [],
-    };
+      const updatedLabs = labs.filter((lab) => lab.id !== labId);
+      setLabs(updatedLabs);
 
-    const updatedLabs = labs.map((lab) =>
-      lab.id === selectedLab.id ? updatedLab : lab
-    );
-
-    saveLabs(updatedLabs);
-    setSelectedLab(updatedLab);
-
-    toast("Sala excluída", {
-      description: "A sala foi removida com sucesso.",
-    });
-  };
-
-  const handleSaveLab = (lab: Laboratory) => {
-    if (editingLab) {
-      const updatedLabs = labs.map((l) => (l.id === lab.id ? lab : l));
-      saveLabs(updatedLabs);
-      if (selectedLab?.id === lab.id) {
-        setSelectedLab(lab);
+      if (selectedLab?.id === labId) {
+        setSelectedLab(null);
       }
-      toast("Laboratório atualizado", {
-        description: "As alterações foram salvas com sucesso.",
+
+      toast("Laboratório excluído", {
+        description: "O laboratório foi removido com sucesso.",
       });
-    } else {
-      saveLabs([...labs, lab]);
-      toast("Laboratório cadastrado", {
-        description: "O laboratório foi criado com sucesso.",
+    } catch (error) {
+      console.error("Erro ao excluir laboratório:", error);
+      toast("Erro", {
+        description: "Não foi possível excluir o laboratório.",
       });
     }
-    setEditingLab(null);
   };
 
-  const handleSaveRoom = (room: Room) => {
+  const handleDeleteRoom = async (roomId: string) => {
     if (!selectedLab) return;
 
-    let updatedRooms: Room[];
-    if (editingRoom) {
-      updatedRooms =
-        selectedLab.rooms?.map((r) => (r.id === room.id ? room : r)) || [];
-      toast("Sala atualizada", {
-        description: "As alterações foram salvas com sucesso.",
+    try {
+      await apiService.deleteRoom(token as string, Number(roomId));
+
+      // Atualizar localmente
+      const updatedLab = {
+        ...selectedLab,
+        rooms: selectedLab.rooms?.filter((room) => room.id !== roomId) || [],
+      };
+
+      const updatedLabs = labs.map((lab) =>
+        lab.id === selectedLab.id ? updatedLab : lab
+      );
+
+      setLabs(updatedLabs);
+      setSelectedLab(updatedLab);
+
+      toast("Sala excluída", {
+        description: "A sala foi removida com sucesso.",
       });
-    } else {
-      updatedRooms = [...(selectedLab.rooms || []), room];
-      toast("Sala cadastrada", {
-        description: "A sala foi criada com sucesso.",
+    } catch (error) {
+      console.error("Erro ao excluir sala:", error);
+      toast("Erro", {
+        description: "Não foi possível excluir a sala.",
       });
     }
-
-    const updatedLab = { ...selectedLab, rooms: updatedRooms };
-    const updatedLabs = labs.map((lab) =>
-      lab.id === selectedLab.id ? updatedLab : lab
-    );
-
-    saveLabs(updatedLabs);
-    setSelectedLab(updatedLab);
-    setEditingRoom(null);
   };
+
+  const handleSaveLab = async (labData: Laboratory) => {
+    // Validar campos obrigatórios
+    try {
+      if (editingLab) {
+        const labToUpdate = { ...labData, rooms: editingLab.rooms || [] };
+        const { id, rooms, ...labWithoutId } = labToUpdate;
+        const updatedLab = await apiService.updateLab(
+          token as string,
+          Number(editingLab.id),
+          labWithoutId
+        );
+
+        const updatedLabs = labs.map((l) =>
+          l.id === editingLab.id ? updatedLab : l
+        );
+
+        setLabs(updatedLabs);
+
+        if (selectedLab?.id === editingLab.id) {
+          setSelectedLab(updatedLab);
+        }
+
+        toast("Laboratório atualizado", {
+          description: "As alterações foram salvas com sucesso.",
+        });
+      } else {
+        const labToCreate = { ...labData, rooms: [] };
+
+        const { id, ...labWithoutId } = labToCreate;
+
+        console.log("Creating lab with data:", labWithoutId);
+
+        const newLab = await apiService.createLab(
+          token as string,
+          labWithoutId
+        );
+
+        setLabs((prev) => [...prev, newLab]);
+
+        toast("Laboratório cadastrado", {
+          description: "O laboratório foi criado com sucesso.",
+        });
+      }
+
+      setEditingLab(null);
+      setIsLabModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar laboratório:", error);
+      toast("Erro", {
+        description: "Não foi possível salvar o laboratório.",
+      });
+    }
+  };
+
+  const handleSaveRoom = async (roomData: Room) => {
+    if (!selectedLab) return;
+
+    try {
+      if (editingRoom) {
+        // Editar sala existente
+        const { id, ...roomWithoutId } = roomData;
+        const updatedRoom = await apiService.updateRoom(
+          token as string,
+          Number(editingRoom.id),
+          roomWithoutId
+        );
+
+        // Atualizar localmente
+        const updatedRooms =
+          selectedLab.rooms?.map((r) =>
+            r.id === editingRoom.id ? updatedRoom : r
+          ) || [];
+
+        const updatedLab = { ...selectedLab, rooms: updatedRooms };
+        const updatedLabs = labs.map((lab) =>
+          lab.id === selectedLab.id ? updatedLab : lab
+        );
+
+        setLabs(updatedLabs);
+        setSelectedLab(updatedLab);
+
+        toast("Sala atualizada", {
+          description: "As alterações foram salvas com sucesso.",
+        });
+      } else {
+        // Criar nova sala
+        const { id, ...roomWithoutId } = roomData;
+        const newRoom = await apiService.createRoom(
+          selectedLab.id,
+          roomWithoutId
+        );
+
+        // Atualizar localmente
+        const updatedRooms = [...(selectedLab.rooms || []), newRoom];
+        const updatedLab = { ...selectedLab, rooms: updatedRooms };
+        const updatedLabs = labs.map((lab) =>
+          lab.id === selectedLab.id ? updatedLab : lab
+        );
+
+        setLabs(updatedLabs);
+        setSelectedLab(updatedLab);
+
+        toast("Sala cadastrada", {
+          description: "A sala foi criada com sucesso.",
+        });
+      }
+
+      setEditingRoom(null);
+      setIsRoomModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar sala:", error);
+      toast("Erro", {
+        description: "Não foi possível salvar a sala.",
+      });
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-foreground text-lg">
+          Por favor, faça login para acessar o sistema.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  Gerenciar Laboratórios
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Cadastre e edite laboratórios e salas
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingLab(null);
-                setIsLabModalOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Laboratório
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Gerenciar Laboratórios
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Cadastre e edite laboratórios e salas
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              setEditingLab(null);
+              setIsLabModalOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Laboratório
+          </Button>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <h2 className="text-xl font-semibold text-foreground mb-4">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               Laboratórios
-            </h2>
+            </h3>
             <div className="space-y-4">
               {labs.map((lab) => (
                 <Card
@@ -225,9 +334,9 @@ export default function ManagePage() {
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-foreground">
+              <h3 className="text-xl font-semibold text-foreground">
                 {selectedLab ? `Salas - ${selectedLab.name}` : "Salas"}
-              </h2>
+              </h3>
               {selectedLab && (
                 <Button
                   onClick={() => {

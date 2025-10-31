@@ -6,12 +6,11 @@ import moment from "moment";
 // import "moment/locale/pt-br"
 // import "react-big-calendar/lib/css/react-big-calendar.css"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import type { Laboratory, Room, Booking } from "@/lib/types";
 import { BookingModal } from "@/components/booking-modal";
 import { toast } from "sonner";
+import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/contexts/AuthContext";
 
 moment.locale("pt-br");
 const localizer = momentLocalizer(moment);
@@ -43,6 +42,8 @@ export default function SchedulePage() {
     end: Date;
   } | null>(null);
   const [view, setView] = useState<View>("week");
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const storedLabs = localStorage.getItem("laboratories");
@@ -120,29 +121,30 @@ export default function SchedulePage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-foreground text-lg">
+          Por favor, faça login para acessar o sistema.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Agendamento de Salas
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Visualize e reserve horários disponíveis
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground">
+            Agendamento de Salas
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Visualize e reserve horários disponíveis
+          </p>
+        </div>
+
         <div className="grid gap-6 mb-6 md:grid-cols-2">
           <Card>
             <CardHeader>

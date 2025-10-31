@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Building2, DoorOpen, Calendar, Plus } from "lucide-react";
 import Link from "next/link";
 import type { Laboratory } from "@/lib/types";
+import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useApiService } from "@/lib/api";
 
 export default function HomePage() {
   const [labs, setLabs] = useState<Laboratory[]>([]);
@@ -20,58 +23,56 @@ export default function HomePage() {
     totalRooms: 0,
     totalBookings: 0,
   });
+  const { user, token, loading: authLoading } = useAuth();
+  const apiService = useApiService();
 
   useEffect(() => {
-    const storedLabs = localStorage.getItem("laboratories");
-    const storedBookings = localStorage.getItem("bookings");
+    if (user && token) {
+      fetchDashboardData();
+    }
+  }, [user, token]);
 
-    if (storedLabs) {
-      const parsedLabs = JSON.parse(storedLabs);
-      setLabs(parsedLabs);
-
-      const totalRooms = parsedLabs.reduce(
-        (acc: number, lab: Laboratory) => acc + (lab.rooms?.length || 0),
-        0
-      );
-
-      const bookings = storedBookings ? JSON.parse(storedBookings) : [];
+  const fetchDashboardData = async () => {
+    if (!token) return;
+    try {
+      const [laboratories, rooms, bookings] = await Promise.all([
+        apiService.getLabs(token as string),
+        apiService.getRooms(token as string),
+        apiService.getBookings(token as string),
+      ]);
 
       setStats({
-        totalLabs: parsedLabs.length,
-        totalRooms,
+        totalLabs: laboratories.length,
+        totalRooms: rooms.length,
         totalBookings: bookings.length,
       });
+    } catch (err) {
+      console.error("Erro ao buscar dados separadamente:", err);
+      throw err;
     }
-  }, []);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-foreground text-lg">
+          Por favor, faça login para acessar o sistema.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">CadLab</h1>
-              <p className="text-muted-foreground mt-1">
-                Sistema de Gerenciamento de Laboratórios
-              </p>
-            </div>
-            <nav className="flex gap-4">
-              <Link href="/manage">
-                <Button variant="outline">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Gerenciar
-                </Button>
-              </Link>
-              <Link href="/schedule">
-                <Button>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Agendar
-                </Button>
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="container mx-auto px-4 py-12">
         <div className="grid gap-6 md:grid-cols-3 mb-12">
