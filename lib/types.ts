@@ -1,27 +1,36 @@
+export interface User {
+  id?: number;
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface Room {
-  id: string;
+  id?: number;
   name: string;
   capacity: number;
+  labId: number;
   description?: string;
 }
 
-export interface Laboratory {
-  id: string;
+export interface Lab {
+  id?: number;
   name: string;
-  capacity: number;
-  location: string;
   description?: string;
+  location: string;
+  capacity: number;
   rooms?: Room[];
 }
 
 export interface Booking {
-  id: string;
-  laboratoryId: string;
-  laboratoryName: string;
-  roomId: string;
-  roomName: string;
+  id?: number;
+  labId: number;
+  roomId: number;
+  purpose: string;
+  description?: string;
+  userId: number;
+  user: User;
   startTime: string;
   endTime: string;
-  responsible: string;
-  purpose: string;
+  status: "pending" | "confirmed" | "cancelled";
 }

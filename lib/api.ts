@@ -1,8 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Booking } from "@/types/interfaces/Booking";
-import { Lab } from "@/types/interfaces/Lab";
-import { Room } from "@/types/interfaces/Room";
-import { User } from "@/types/interfaces/User";
+import type { User, Lab, Room, Booking } from "./types";
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3001";
 
@@ -53,6 +50,9 @@ class ApiService {
       password: userData.password,
     };
     return this.request("/auth/register", {
+      headers: {
+        "Content-Type": "application/json",
+      },
       method: "POST",
       body: JSON.stringify(newUser),
     });
@@ -60,6 +60,9 @@ class ApiService {
 
   async login({ email, password }: { email: string; password: string }) {
     return this.request("/auth/login", {
+      headers: {
+        "Content-Type": "application/json",
+      },
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -83,24 +86,6 @@ class ApiService {
     });
   }
 
-  async getRooms(token: string) {
-    return this.request("/rooms", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
-
-  async getBookings(token: string) {
-    return this.request("/bookings", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
-
   async createLab(token: string, labData: Omit<Lab, "id">) {
     return this.request("/labs", {
       method: "POST",
@@ -116,6 +101,7 @@ class ApiService {
     return this.request(`/labs/${labId}`, {
       method: "PUT",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(labData),
@@ -131,10 +117,20 @@ class ApiService {
     });
   }
 
+  async getRooms(token: string) {
+    return this.request("/rooms", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
   async createRoom(token: string, roomData: Omit<Room, "id">) {
     return this.request("/rooms", {
       method: "POST",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(roomData),
@@ -145,6 +141,7 @@ class ApiService {
     return this.request(`/rooms/${roomId}`, {
       method: "PUT",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(roomData),
@@ -159,7 +156,62 @@ class ApiService {
       },
     });
   }
+
+  async getBookings(token: string) {
+    return this.request("/bookings", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getBookingsByRoom(token: string, roomId: number) {
+    return this.request(`/bookings/room/${roomId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  async createBooking(token: string, bookingData: Omit<Booking, "id">) {
+    return this.request("/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(bookingData),
+    });
+  }
+
+  async updateBooking(
+    token: string,
+    bookingId: number,
+    bookingData: Partial<Booking>
+  ) {
+    return this.request(`/bookings/${bookingId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(bookingData),
+    });
+  }
+
+  async deleteBooking(token: string, bookingId: number) {
+    return this.request(`/bookings/${bookingId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
 }
+
+export const apiService = new ApiService();
 
 export function useApiService() {
   const { token } = useAuth();

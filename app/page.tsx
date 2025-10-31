@@ -11,13 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Building2, DoorOpen, Calendar, Plus } from "lucide-react";
 import Link from "next/link";
-import type { Laboratory } from "@/lib/types";
+import type { Lab } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApiService } from "@/lib/api";
 
 export default function HomePage() {
-  const [labs, setLabs] = useState<Laboratory[]>([]);
+  const [labs, setLabs] = useState<Lab[]>([]);
   const [stats, setStats] = useState({
     totalLabs: 0,
     totalRooms: 0,
@@ -29,8 +29,20 @@ export default function HomePage() {
   useEffect(() => {
     if (user && token) {
       fetchDashboardData();
+      fetchLabs();
     }
   }, [user, token]);
+
+  const fetchLabs = async () => {
+    if (!token) return;
+    try {
+      const laboratories = await apiService.getLabs(token as string);
+      setLabs(laboratories);
+    } catch (err) {
+      console.error("Erro ao buscar laboratórios:", err);
+      throw err;
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!token) return;
@@ -60,7 +72,7 @@ export default function HomePage() {
     );
   }
 
-  if (!user) {
+  if (!user || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-foreground text-lg">

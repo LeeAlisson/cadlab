@@ -1,9 +1,8 @@
-// contexts/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useApiService } from "@/lib/api";
-import { User } from "@/types/interfaces/User";
+import { apiService } from "@/lib/api";
+import type { User } from "@/lib/types";
 
 interface AuthContextType {
   user: User | null;
@@ -38,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await useApiService().login({ email, password });
+    const response = await apiService.login({ email, password });
 
     if (response.token && response.user) {
       localStorage.setItem("token", response.token);
@@ -49,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await useApiService().register({ name, email, password });
+    const response = await apiService.register({ name, email, password });
 
     if (response.token && response.user) {
       localStorage.setItem("token", response.token);

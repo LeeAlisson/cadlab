@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, Plus, Trash2, Edit2, DoorOpen } from "lucide-react";
-import type { Laboratory, Room } from "@/lib/types";
+import type { Lab, Room } from "@/lib/types";
 import { toast } from "sonner";
 import { LabModal } from "@/components/lab-modal";
 import { RoomModal } from "@/components/room-modal";
@@ -19,11 +19,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useApiService } from "@/lib/api";
 
 export default function ManagePage() {
-  const [labs, setLabs] = useState<Laboratory[]>([]);
-  const [selectedLab, setSelectedLab] = useState<Laboratory | null>(null);
+  const [labs, setLabs] = useState<Lab[]>([]);
+  const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
-  const [editingLab, setEditingLab] = useState<Laboratory | null>(null);
+  const [editingLab, setEditingLab] = useState<Lab | null>(null);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,10 +55,10 @@ export default function ManagePage() {
     try {
       await apiService.deleteLab(token as string, Number(labId));
 
-      const updatedLabs = labs.filter((lab) => lab.id !== labId);
+      const updatedLabs = labs.filter((lab) => lab.id !== Number(labId));
       setLabs(updatedLabs);
 
-      if (selectedLab?.id === labId) {
+      if (selectedLab?.id === Number(labId)) {
         setSelectedLab(null);
       }
 
@@ -79,10 +79,10 @@ export default function ManagePage() {
     try {
       await apiService.deleteRoom(token as string, Number(roomId));
 
-      // Atualizar localmente
       const updatedLab = {
         ...selectedLab,
-        rooms: selectedLab.rooms?.filter((room) => room.id !== roomId) || [],
+        rooms:
+          selectedLab.rooms?.filter((room) => room.id !== Number(roomId)) || [],
       };
 
       const updatedLabs = labs.map((lab) =>
@@ -103,17 +103,20 @@ export default function ManagePage() {
     }
   };
 
-  const handleSaveLab = async (labData: Laboratory) => {
-    // Validar campos obrigatórios
+  const handleSaveLab = async (labData: Lab) => {
     try {
       if (editingLab) {
         const labToUpdate = { ...labData, rooms: editingLab.rooms || [] };
         const { id, rooms, ...labWithoutId } = labToUpdate;
+        console.log("Updating lab with data:", labToUpdate);
+
         const updatedLab = await apiService.updateLab(
           token as string,
-          Number(editingLab.id),
+          Number(id),
           labWithoutId
         );
+
+        console.log("Updated lab:", updatedLab);
 
         const updatedLabs = labs.map((l) =>
           l.id === editingLab.id ? updatedLab : l
@@ -157,12 +160,11 @@ export default function ManagePage() {
     }
   };
 
-  const handleSaveRoom = async (roomData: Room) => {
+  const handleSaveRoom = async (roomData: Partial<Room>) => {
     if (!selectedLab) return;
 
     try {
       if (editingRoom) {
-        // Editar sala existente
         const { id, ...roomWithoutId } = roomData;
         const updatedRoom = await apiService.updateRoom(
           token as string,
@@ -170,7 +172,6 @@ export default function ManagePage() {
           roomWithoutId
         );
 
-        // Atualizar localmente
         const updatedRooms =
           selectedLab.rooms?.map((r) =>
             r.id === editingRoom.id ? updatedRoom : r
@@ -188,14 +189,19 @@ export default function ManagePage() {
           description: "As alterações foram salvas com sucesso.",
         });
       } else {
-        // Criar nova sala
-        const { id, ...roomWithoutId } = roomData;
+        console.log(selectedLab.id);
+        const newRoomData = {
+          name: roomData.name!,
+          capacity: roomData.capacity!,
+          labId: Number(selectedLab.id!),
+          description: roomData.description || "",
+        };
+
         const newRoom = await apiService.createRoom(
-          selectedLab.id,
-          roomWithoutId
+          token as string,
+          newRoomData
         );
 
-        // Atualizar localmente
         const updatedRooms = [...(selectedLab.rooms || []), newRoom];
         const updatedLab = { ...selectedLab, rooms: updatedRooms };
         const updatedLabs = labs.map((lab) =>
@@ -228,7 +234,7 @@ export default function ManagePage() {
     );
   }
 
-  if (!user) {
+  if (!user || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-foreground text-lg">
@@ -302,7 +308,7 @@ export default function ManagePage() {
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteLab(lab.id);
+                            handleDeleteLab(String(lab.id));
                           }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -388,7 +394,7 @@ export default function ManagePage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteRoom(room.id)}
+                            onClick={() => handleDeleteRoom(String(room.id))}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
