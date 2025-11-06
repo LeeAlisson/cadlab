@@ -53,7 +53,7 @@ export function LabModal({ isOpen, onClose, onSave, lab }: LabModalProps) {
     e.preventDefault();
 
     const labData: Lab = {
-      id: lab?.id || Date.now().toString(),
+      id: lab?.id ?? Date.now(),
       name: formData.name,
       capacity: Number.parseInt(formData.capacity),
       location: formData.location,
