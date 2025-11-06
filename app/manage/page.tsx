@@ -447,6 +447,7 @@ export default function ManagePage() {
         lab={editingLab}
       />
 
+      {selectedLab && (
       <RoomModal
         isOpen={isRoomModalOpen}
         onClose={() => {
@@ -455,8 +456,8 @@ export default function ManagePage() {
         }}
         onSave={handleSaveRoom}
         room={editingRoom}
-        labId={selectedLab?.id}
+        labId={selectedLab.id}
       />
-    </div>
+    )}
   );
 }
