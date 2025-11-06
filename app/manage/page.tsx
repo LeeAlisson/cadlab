@@ -447,7 +447,7 @@ export default function ManagePage() {
         lab={editingLab}
       />
 
-      {selectedLab && (
+      {selectedLab && selectedLab.id !== undefined && (
         <RoomModal
           isOpen={isRoomModalOpen}
           onClose={() => {
