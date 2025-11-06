@@ -448,16 +448,17 @@ export default function ManagePage() {
       />
 
       {selectedLab && (
-      <RoomModal
-        isOpen={isRoomModalOpen}
-        onClose={() => {
-          setIsRoomModalOpen(false);
-          setEditingRoom(null);
-        }}
-        onSave={handleSaveRoom}
-        room={editingRoom}
-        labId={selectedLab.id}
-      />
-    )}
+        <RoomModal
+          isOpen={isRoomModalOpen}
+          onClose={() => {
+            setIsRoomModalOpen(false);
+            setEditingRoom(null);
+          }}
+          onSave={handleSaveRoom}
+          room={editingRoom}
+          labId={selectedLab.id}
+        />
+      )}
+    </div>
   );
 }
