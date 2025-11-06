@@ -126,4 +126,3 @@ export function RoomModal({ isOpen, onClose, onSave, room, labId }: RoomModalPro
       </DialogContent>
     </Dialog>
   );
-}
