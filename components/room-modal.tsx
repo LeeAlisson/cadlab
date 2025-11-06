@@ -21,7 +21,7 @@ interface RoomModalProps {
   onClose: () => void;
   onSave: (room: Room) => void;
   room: Room | null;
-  labId: number;
+  labId?: number;
 }
 
 export function RoomModal({ isOpen, onClose, onSave, room, labId }: RoomModalProps) {
