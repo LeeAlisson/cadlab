@@ -21,9 +21,10 @@ interface RoomModalProps {
   onClose: () => void;
   onSave: (room: Room) => void;
   room: Room | null;
+  labId: number;
 }
 
-export function RoomModal({ isOpen, onClose, onSave, room }: RoomModalProps) {
+export function RoomModal({ isOpen, onClose, onSave, room, labId }: RoomModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     capacity: "",
@@ -54,6 +55,7 @@ export function RoomModal({ isOpen, onClose, onSave, room }: RoomModalProps) {
       name: formData.name,
       capacity: Number.parseInt(formData.capacity),
       description: formData.description,
+      labId,
     };
 
     onSave(roomData);
