@@ -455,7 +455,7 @@ export default function ManagePage() {
         }}
         onSave={handleSaveRoom}
         room={editingRoom}
-        labId={selectedLab.id!}
+        labId={selectedLab?.id}
       />
     </div>
   );
