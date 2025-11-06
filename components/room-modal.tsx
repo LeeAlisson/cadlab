@@ -50,7 +50,7 @@ export function RoomModal({ isOpen, onClose, onSave, room }: RoomModalProps) {
     e.preventDefault();
 
     const roomData: Room = {
-      id: room?.id || Date.now().toString(),
+      id: room?.id || Date.now(),
       name: formData.name,
       capacity: Number.parseInt(formData.capacity),
       description: formData.description,
