@@ -19,8 +19,8 @@ import type { Lab } from "@/lib/types";
 interface LabModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (lab: Laboratory) => void;
-  lab: Laboratory | null;
+  onSave: (lab: Lab) => void;
+  lab: Lab | null;
 }
 
 export function LabModal({ isOpen, onClose, onSave, lab }: LabModalProps) {
@@ -52,7 +52,7 @@ export function LabModal({ isOpen, onClose, onSave, lab }: LabModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const labData: Laboratory = {
+    const labData: Lab = {
       id: lab?.id || Date.now().toString(),
       name: formData.name,
       capacity: Number.parseInt(formData.capacity),
